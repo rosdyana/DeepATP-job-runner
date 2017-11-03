@@ -1,0 +1,14 @@
+{
+  "host": "localhost",
+  "web": "http://bio216.bioinfo.yzu.edu.tw/nadbinding/finish/",
+  "socket_port": 3004,
+  "root_path": "/home/ros/NAD-binding-site-task/",
+
+  "blast_path": "psiblast",
+  "blast_db_path": "/home/khanh/blast/db/nr",
+  "blast_thread": 8,
+
+  "python_path": "python",
+
+  "check_delay": 5000
+}

@@ -1,0 +1,29 @@
+{
+  "name": "nadbindingtask",
+  "version": "1.0.0",
+  "description": "nad binding site task runner",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rosdyana/NAD-binding-site-task.git"
+  },
+  "author": "rosdyana.kusuma",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rosdyana/NAD-binding-site-task/issues"
+  },
+  "homepage": "https://github.com/rosdyana/NAD-binding-site-task#readme",
+  "dependencies": {
+    "async": "^2.5.0",
+    "knex": "^0.13.0",
+    "moment": "^2.19.1",
+    "mysql": "^2.15.0",
+    "socketio": "^1.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.12.1"
+  }
+}
