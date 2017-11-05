@@ -10,7 +10,7 @@ var db = require('knex')({
     host : '140.138.155.216',
     user : 'root',
     password : 'bio1607b',
-    database : 'nadbinding'
+    database : 'nadcnn'
   }
 });
 
