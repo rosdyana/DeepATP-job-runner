@@ -71,6 +71,40 @@ function predict(id, next) {
           config.root_path + 'calculate.py',
           config.root_path + 'data.pssm',
           19,
+          config.root_path + 'data.libsvm'
+        ]);
+        ps.stdout.on('data', (data) => {
+          if (process.argv.indexOf('-v') !== -1)
+            console.log(`${data}`);
+        });
+        ps.on('close', (code) => {
+          if (code) return callback(code);
+          process.stdout.write('Done\n');
+          callback();
+        });
+      },
+      normalization: function(callback){
+        process.stdout.write('> Data Normalization:\t');
+        var ps = require('child_process').spawn(config.python_path, [
+          config.root_path + 'normalization.py',
+          config.root_path + 'data.libsvm',
+          config.root_path + 'data.csv'
+        ]);
+        ps.stdout.on('data', (data) => {
+          if (process.argv.indexOf('-v') !== -1)
+            console.log(`${data}`);
+        });
+        ps.on('close', (code) => {
+          if (code) return callback(code);
+          process.stdout.write('Done\n');
+          callback();
+        });
+      },
+      libsvmToCsv: function(callback){
+        process.stdout.write('> libsvmToCsv:\t');
+        var ps = require('child_process').spawn(config.python_path, [
+          config.root_path + 'normalization.py',
+          config.root_path + 'data.libsvm',
           config.root_path + 'data.csv'
         ]);
         ps.stdout.on('data', (data) => {
