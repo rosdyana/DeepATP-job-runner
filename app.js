@@ -50,7 +50,7 @@ function predict(id, next) {
         process.stdout.write('> Converting to PSSM:\t\t');
         var ps = require('child_process').spawn(config.blast_path, [
           '-db', config.blast_db_path,
-          '-num_iterations', 2,
+          '-num_iterations', 3,
           '-threshold', 0.001,
           '-in_msa', config.root_path + 'data.fasta',
           '-out_ascii_pssm', config.root_path + 'data.pssm'
@@ -88,7 +88,7 @@ function predict(id, next) {
         var ps = require('child_process').spawn(config.python_path, [
           config.root_path + 'normalization.py',
           config.root_path + 'data.libsvm',
-          config.root_path + 'data.csv'
+          config.root_path + 'data_norm.libsvm'
         ]);
         ps.stdout.on('data', (data) => {
           if (process.argv.indexOf('-v') !== -1)
@@ -103,8 +103,8 @@ function predict(id, next) {
       libsvmToCsv: function(callback){
         process.stdout.write('> libsvmToCsv:\t');
         var ps = require('child_process').spawn(config.python_path, [
-          config.root_path + 'normalization.py',
-          config.root_path + 'data.libsvm',
+          config.root_path + 'formatchanger.py',
+          config.root_path + 'data_norm.libsvm',
           config.root_path + 'data.csv'
         ]);
         ps.stdout.on('data', (data) => {
@@ -148,7 +148,7 @@ function predict(id, next) {
             db('proteins').where('id', id).update({
               predicted: data_result
             }).then(function() {
-              async.each(['data.fasta', 'data.pssm', 'data.csv', 'data.out', 'error.log'], function(file, call) {
+              async.each(['data.fasta', 'data.pssm', 'data.libsvm', 'data_norm.libsvm', 'data.csv', 'data.out', 'error.log'], function(file, call) {
                 fs.unlink(config.root_path + file, function() {
                   call()
                 })
