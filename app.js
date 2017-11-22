@@ -50,7 +50,7 @@ function predict(id, next) {
         process.stdout.write('> Converting to PSSM:\t\t');
         var ps = require('child_process').spawn(config.blast_path, [
           '-db', config.blast_db_path,
-          '-num_iterations', 3,
+          '-num_iterations', 2,
           '-threshold', 0.001,
           '-in_msa', config.root_path + 'data.fasta',
           '-out_ascii_pssm', config.root_path + 'data.pssm'
