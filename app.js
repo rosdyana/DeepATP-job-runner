@@ -18,9 +18,9 @@ var config = require('./config.json');
 
 var server = require('http').createServer();
 var io = require('socket.io')(server);
-io.on('connection', function(client) {
+io.on('connection', function (client) {
   console.log('User connected!');
-  client.on('disconnect', function() {
+  client.on('disconnect', function () {
     console.log('User disconnected!');
   });
 });
@@ -29,29 +29,29 @@ server.listen(config.socket_port);
 function predict(id, next) {
   console.log('>> Start predicting protein #' + id);
   async.series({
-      get_data: function(callback) {
+      get_data: function (callback) {
         process.stdout.write('> Checking DB:\t\t\t');
-        db('proteins').where('id', id).select('name', 'data', 'predicted').first().then(function(fasta) {
+        db('task_details').where('id', id).select('name', 'sequence', 'result').first().then(function (fasta) {
           process.stdout.write('Done\n');
           process.stdout.write('> Protein name:\t\t\t' + fasta.name + '\n');
-          if (fasta.predicted !== '') {
-            process.stdout.write('> Sequence already predicted.\n> Predicted: ' + fasta.predicted);
+          if (fasta.result !== '') {
+            process.stdout.write('> Sequence already predicted.\n> Predicted: ' + fasta.result);
             callback(1);
           } else {
             process.stdout.write('> Preparing for conversion:\t');
-            fs.writeFile(config.root_path + 'data.fasta', fasta.name + '\n' + fasta.data, (err) => {
+            fs.writeFile(config.root_path + 'data.fasta', fasta.name + '\n' + fasta.sequence, (err) => {
               process.stdout.write('Done\n');
               callback();
             })
           }
         });
       },
-      convert: function(callback) {
+      convert: function (callback) {
         process.stdout.write('> Converting to PSSM:\t\t');
         var ps = require('child_process').spawn(config.blast_path, [
           '-db', config.blast_db_path,
           '-num_iterations', 2,
-          '-threshold', 0.001,
+          '-num_threads', 8,
           '-in_msa', config.root_path + 'data.fasta',
           '-out_ascii_pssm', config.root_path + 'data.pssm'
         ]);
@@ -65,46 +65,46 @@ function predict(id, next) {
           callback();
         });
       },
-      calculate: function(callback) {
-        process.stdout.write('> Extracting feature PSSM:\t');
-        var ps = require('child_process').spawn(config.python_path, [
-          config.root_path + 'calculate.py',
-          config.root_path + 'data.pssm',
-          19,
-          config.root_path + 'data.libsvm'
-        ]);
-        ps.stdout.on('data', (data) => {
-          if (process.argv.indexOf('-v') !== -1)
-            console.log(`${data}`);
-        });
-        ps.on('close', (code) => {
-          if (code) return callback(code);
-          process.stdout.write('Done\n');
-          callback();
-        });
-      },
-      normalization: function(callback){
-        process.stdout.write('> Data Normalization:\t');
-        var ps = require('child_process').spawn(config.python_path, [
-          config.root_path + 'normalization.py',
-          config.root_path + 'data.libsvm',
-          config.root_path + 'data_norm.libsvm'
-        ]);
-        ps.stdout.on('data', (data) => {
-          if (process.argv.indexOf('-v') !== -1)
-            console.log(`${data}`);
-        });
-        ps.on('close', (code) => {
-          if (code) return callback(code);
-          process.stdout.write('Done\n');
-          callback();
-        });
-      },
-      libsvmToCsv: function(callback){
+      // calculate: function (callback) {
+      //   process.stdout.write('> Extracting feature PSSM:\t');
+      //   var ps = require('child_process').spawn(config.python_path, [
+      //     config.root_path + 'calculate.py',
+      //     config.root_path + 'data.pssm',
+      //     19,
+      //     config.root_path + 'data.libsvm'
+      //   ]);
+      //   ps.stdout.on('data', (data) => {
+      //     if (process.argv.indexOf('-v') !== -1)
+      //       console.log(`${data}`);
+      //   });
+      //   ps.on('close', (code) => {
+      //     if (code) return callback(code);
+      //     process.stdout.write('Done\n');
+      //     callback();
+      //   });
+      // },
+      // normalization: function (callback) {
+      //   process.stdout.write('> Data Normalization:\t');
+      //   var ps = require('child_process').spawn(config.python_path, [
+      //     config.root_path + 'normalization.py',
+      //     config.root_path + 'data.libsvm',
+      //     config.root_path + 'data_norm.libsvm'
+      //   ]);
+      //   ps.stdout.on('data', (data) => {
+      //     if (process.argv.indexOf('-v') !== -1)
+      //       console.log(`${data}`);
+      //   });
+      //   ps.on('close', (code) => {
+      //     if (code) return callback(code);
+      //     process.stdout.write('Done\n');
+      //     callback();
+      //   });
+      // },
+      pssmToCsv: function (callback) {
         process.stdout.write('> libsvmToCsv:\t');
         var ps = require('child_process').spawn(config.python_path, [
-          config.root_path + 'formatchanger.py',
-          config.root_path + 'data_norm.libsvm',
+          config.root_path + 'pssm_generator_csv.py',
+          config.root_path + 'data.pssm',
           config.root_path + 'data.csv'
         ]);
         ps.stdout.on('data', (data) => {
@@ -117,10 +117,11 @@ function predict(id, next) {
           callback();
         });
       },
-      predict: function(callback) {
+      predict: function (callback) {
         process.stdout.write('> Predicting:\t\t\t');
         var ps = require('child_process').spawn(config.python_path, [
-          config.root_path + 'model.py',
+          config.root_path + 'predictor.py',
+          config.root_path + '20180407_CNN09_adadelta_Model_With_Batch_Normalization_choosing_all_para_after_grid_search_30_epoch.h5',
           config.root_path + 'data.csv',
           config.root_path + 'data.out'
         ]);
@@ -138,21 +139,21 @@ function predict(id, next) {
           callback();
         });
       },
-      updateDB: function(callback) {
-        fs.readFile(config.root_path + 'data.out', 'utf8', function(err, data) {
+      updateDB: function (callback) {
+        fs.readFile(config.root_path + 'data.out', 'utf8', function (err, data) {
           if (err) return callback(err);
           else {
             var data_result = data
             process.stdout.write('> data:\t\t\t' + data_result + '\n');
             process.stdout.write('> Saving:\t\t\t');
-            db('proteins').where('id', id).update({
-              predicted: data_result
-            }).then(function() {
-              async.each(['data.fasta', 'data.pssm', 'data.libsvm', 'data_norm.libsvm', 'data.csv', 'data.out', 'error.log'], function(file, call) {
-                fs.unlink(config.root_path + file, function() {
+            db('task_details').where('id', id).update({
+              result: data_result
+            }).then(function () {
+              async.each(['data.fasta', 'data.pssm', 'data.libsvm', 'data_norm.libsvm', 'data.csv', 'data.out', 'error.log'], function (file, call) {
+                fs.unlink(config.root_path + file, function () {
                   call()
                 })
-              }, function(err) {
+              }, function (err) {
                 console.log('Done\n')
                 callback();
               })
@@ -161,13 +162,13 @@ function predict(id, next) {
         });
       }
     },
-    function(err, results) {
+    function (err, results) {
       if (err) return next(err);
       next();
     });
 }
 
-Array.prototype.clean = function(deleteValue) {
+Array.prototype.clean = function (deleteValue) {
   for (var i = 0; i < this.length; i++) {
     if (this[i] == deleteValue) {
       this.splice(i, 1);
@@ -179,23 +180,22 @@ Array.prototype.clean = function(deleteValue) {
 
 
 function doTask(task, next) {
-  var start = moment().format("YYYY-MM-DD HH:mm:ss");;
+  //var start = moment().format("YYYY-MM-DD HH:mm:ss");;
   console.log('\n\n>>> START PROCESSING TASK #' + task.id + '\n');
-  async.eachSeries(task.proteins.split(','), function(id, callback) {
+  async.eachSeries(task.protein_id.split(','), function (id, callback) {
     if (id !== '')
       predict(id, () => {
         callback()
       });
     else callback();
-  }, function(err) {
+  }, function (err) {
     var end = moment().format("YYYY-MM-DD HH:mm:ss");;
     db('tasks').where('id', task.id).update({
       status: 'done',
-      start_time: start,
-      finish_time: end
-    }).then(function() {
+      updated_at: end
+    }).then(function () {
       process.stdout.write('>>> FINISH TASK #' + task.id + '\n');
-      http.get(config.web + task.id, function(res) {
+      http.get(config.web + task.id, function (res) {
         var rs = '';
         res.on('data', (data) => {
           rs += data;
@@ -213,7 +213,7 @@ process.stdout.write('Checking new job...');
 var loop = setInterval(checkJob, config.check_delay);
 
 function checkJob() {
-  db('tasks').where('status', 'queue').orderBy('submit_time').select().first().then(function(task) {
+  db('tasks').where('status', 'queue').orderBy('created_at').select().first().then(function (task) {
     if (typeof task == 'undefined') {
       process.stdout.write('.');
     } else {
