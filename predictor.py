@@ -13,8 +13,8 @@ window_sizes = 17
 # load testing dataset
 ds = numpy.loadtxt(test_file, ndmin=2, delimiter=",")
 X1 = ds[:, 0:window_sizes * 20].reshape(len(ds), window_sizes, 20, 1)
-Y1 = ds[:, window_sizes * 20]
-true_labels = numpy.asarray(Y1)
+# Y1 = ds[:, window_sizes * 20]
+# true_labels = numpy.asarray(Y1)
 
 loaded_model = load_model(h5_model)
 print("Loaded model from disk.")
