@@ -1,12 +1,12 @@
 {
   "host": "localhost",
-  "web": "http://140.138.155.216/deepatp",
+  "web": "http://140.138.155.216/deepatp/finish/",
   "socket_port": 3004,
   "root_path": "/home/ros/NAD-binding-site-task/",
 
-  "blast_path": "psiblast",
+  "blast_path": "/home/semmy/blastLinux/blast-2.2.26/bin/blastpgp",
   "blast_db_path": "/home/semmy/blastLinux/blast-2.2.26/db/nr",
-  "blast_thread": 8,
+  "blast_thread": 4,
 
   "python_path": "python",
 

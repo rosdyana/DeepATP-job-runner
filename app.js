@@ -49,11 +49,12 @@ function predict(id, next) {
       convert: function (callback) {
         process.stdout.write('> Converting to PSSM:\t\t');
         var ps = require('child_process').spawn(config.blast_path, [
-          '-db', config.blast_db_path,
-          '-num_iterations', 2,
-          '-num_threads', 8,
-          '-in_msa', config.root_path + 'data.fasta',
-          '-out_ascii_pssm', config.root_path + 'data.pssm'
+          '-d', config.blast_db_path,
+          '-j', 3,
+          '-a', 4,
+          '-h', 0.001,
+          '-i', config.root_path + 'data.fasta',
+          '-Q', config.root_path + 'data.pssm'
         ]);
         ps.stdout.on('data', (data) => {
           if (process.argv.indexOf('-v') !== -1)
@@ -65,46 +66,28 @@ function predict(id, next) {
           callback();
         });
       },
-      // calculate: function (callback) {
-      //   process.stdout.write('> Extracting feature PSSM:\t');
-      //   var ps = require('child_process').spawn(config.python_path, [
-      //     config.root_path + 'calculate.py',
-      //     config.root_path + 'data.pssm',
-      //     19,
-      //     config.root_path + 'data.libsvm'
-      //   ]);
-      //   ps.stdout.on('data', (data) => {
-      //     if (process.argv.indexOf('-v') !== -1)
-      //       console.log(`${data}`);
-      //   });
-      //   ps.on('close', (code) => {
-      //     if (code) return callback(code);
-      //     process.stdout.write('Done\n');
-      //     callback();
-      //   });
-      // },
-      // normalization: function (callback) {
-      //   process.stdout.write('> Data Normalization:\t');
-      //   var ps = require('child_process').spawn(config.python_path, [
-      //     config.root_path + 'normalization.py',
-      //     config.root_path + 'data.libsvm',
-      //     config.root_path + 'data_norm.libsvm'
-      //   ]);
-      //   ps.stdout.on('data', (data) => {
-      //     if (process.argv.indexOf('-v') !== -1)
-      //       console.log(`${data}`);
-      //   });
-      //   ps.on('close', (code) => {
-      //     if (code) return callback(code);
-      //     process.stdout.write('Done\n');
-      //     callback();
-      //   });
-      // },
-      pssmToCsv: function (callback) {
-        process.stdout.write('> libsvmToCsv:\t');
+      pssmTolibsvm: function (callback) {
+        process.stdout.write('> PSSM to LibSVM:\t');
         var ps = require('child_process').spawn(config.python_path, [
-          config.root_path + 'pssm_generator_csv.py',
+          config.root_path + 'pssm_to_libsvm.py',
           config.root_path + 'data.pssm',
+          config.root_path + 'data.libsvm'
+        ]);
+        ps.stdout.on('data', (data) => {
+          if (process.argv.indexOf('-v') !== -1)
+            console.log(`${data}`);
+        });
+        ps.on('close', (code) => {
+          if (code) return callback(code);
+          process.stdout.write('Done\n');
+          callback();
+        });
+      },
+      libsvmToCsv: function (callback) {
+        process.stdout.write('> LibSVM to CSV:\t');
+        var ps = require('child_process').spawn(config.python_path, [
+          config.root_path + 'formatchanger.py',
+          config.root_path + 'data.libsvm',
           config.root_path + 'data.csv'
         ]);
         ps.stdout.on('data', (data) => {
@@ -149,7 +132,7 @@ function predict(id, next) {
             db('task_details').where('id', id).update({
               result: data_result
             }).then(function () {
-              async.each(['data.fasta', 'data.pssm', 'data.libsvm', 'data_norm.libsvm', 'data.csv', 'data.out', 'error.log'], function (file, call) {
+              async.each(['data.fasta', 'data.pssm', 'data.libsvm', 'data.csv', 'data.out', 'error.log'], function (file, call) {
                 fs.unlink(config.root_path + file, function () {
                   call()
                 })
